@@ -60,9 +60,10 @@ void ReverbProcessor::process(juce::AudioBuffer<float>& buffer,bool hostBypass) 
     auto side=getBusBuffer(buffer,true,1);
     const int n=main.getNumSamples(),inChannels=getChannelCountOfBus(true,0),outs=main.getNumChannels();
     const bool hasSide=getBus(true,1)->isEnabled()&&side.getNumChannels()>0;externalConnected.store(hasSide,std::memory_order_relaxed);
-    std::array<float,numContinuous> target{};for(int i=0;i<numContinuous;++i)target[i]=raw[i]->load(std::memory_order_relaxed);
-    const int alg=int(engine->load()),src=int(source->load()),tailMode=int(tail->load());
-    float fr=frozen->load(),vint=character->load(),wo=wetOnly->load();
+    std::array<float,numContinuous> target{};for(int i=0;i<numContinuous;++i){float value=raw[i]->load(std::memory_order_relaxed);target[i]=std::isfinite(value)?cyber::clamp(value,specs[i].lo,specs[i].hi):specs[i].def;}
+    auto safeChoice=[](float value,int maximum){return std::isfinite(value)?int(cyber::clamp(value,0.f,float(maximum))):0;};
+    const int alg=safeChoice(engine->load(),2),src=safeChoice(source->load(),2),tailMode=safeChoice(tail->load(),2);
+    float fr=float(safeChoice(frozen->load(),1)),vint=float(safeChoice(character->load(),1)),wo=float(safeChoice(wetOnly->load(),1));
     float bp=hostBypass||bypass->load()>.5f||tailMode==2?1.f:0.f;
     std::array<float,2> inPeak{},outPeak{};
     const bool capture=analysing.load(std::memory_order_relaxed);
@@ -93,6 +94,9 @@ void ReverbProcessor::process(juce::AudioBuffer<float>& buffer,bool hostBypass) 
         float desired=cyber::dbGain(-gr);duckGain+=smoothing*(desired-duckGain);
         cyber::Stereo excite{dry.l*(1-bypassSmooth),dry.r*(1-bypassSmooth)};
         auto wet=reverb.tick(excite,alg);
+        // Recover from a non-finite tank value instead of contaminating every
+        // following block. clear() only fills already allocated delay storage.
+        if(!std::isfinite(wet.l)||!std::isfinite(wet.r)){reverb.clear();wet={};hpIn.fill(0);hpOut.fill(0);lpOut.fill(0);}
         std::array<float,2> w{wet.l,wet.r};
         for(int c=0;c<2;++c){float h=hpA*(hpOut[c]+w[c]-hpIn[c]);hpIn[c]=w[c];hpOut[c]=h;lpOut[c]+=lpA*(h-lpOut[c]);w[c]=lpOut[c]*duckGain*cutSmooth;}
         float mid=(w[0]+w[1])*.5f,sideSignal=(w[0]-w[1])*.5f*smoothed[5]*.01f;
@@ -101,6 +105,7 @@ void ReverbProcessor::process(juce::AudioBuffer<float>& buffer,bool hostBypass) 
         float dg=(1-mix)*(1-bypassSmooth)+bypassSmooth;
         float wg=mix;float outGain=cyber::dbGain(smoothed[8]);
         std::array<float,2> out{(dry.l*dg+wet.l*wg)*outGain,(dry.r*dg+wet.r*wg)*outGain};
+        for(auto& value:out)if(!std::isfinite(value))value=0;
         if(outs==1)main.setSample(0,s,(out[0]+out[1])*.5f);else{main.setSample(0,s,out[0]);main.setSample(1,s,out[1]);}
         inPeak[0]=std::max(inPeak[0],std::abs(dry.l));inPeak[1]=std::max(inPeak[1],std::abs(dry.r));
         for(int c=0;c<2;++c)outPeak[c]=std::max(outPeak[c],std::abs(out[c]));

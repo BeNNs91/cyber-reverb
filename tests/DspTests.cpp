@@ -11,6 +11,15 @@ int main(){try{
 #if defined(_M_X64) || defined(__x86_64__)
     _mm_setcsr(_mm_getcsr() | 0x8040); // Match the plugin's denormal protection.
 #endif
+    // Fractional taps just before the circular-buffer origin must interpolate
+    // the final and first samples without rounding to an out-of-range index.
+    {cyber::Delay delay;delay.prepare(19200);std::fill(delay.data.begin(),delay.data.end(),1.f);delay.data.back()=2;delay.pos=1;
+        require(std::abs(delay.read(1.0001f)-1.0001f)<1.e-5f,"Fractional delay wrap reads outside the buffer");}
+    for(int size:{441,4096,19200,76800}){cyber::Delay delay;delay.prepare(size);
+        for(int i=0;i<int(delay.data.size());++i)delay.data[i]=std::sin(float(i)*.3f);
+        for(int pos:{0,1,37,size-1})for(float tap:{1.f,1.0001f,1.9999f,37.0001f,float(size)-.0001f}){
+            delay.pos=pos;double wrapped=double(pos)-double(tap);while(wrapped<0)wrapped+=double(delay.data.size());int a=int(wrapped),b=(a+1)%int(delay.data.size());double fraction=wrapped-a;
+            double expected=delay.data[a]+fraction*(double(delay.data[b])-delay.data[a]);require(std::abs(delay.read(tap)-expected)<2.e-6,"Fractional delay interpolation differs from double-precision reference");}}
     for(double sr:{44100.,48000.,88200.,96000.,192000.})for(int engine=0;engine<3;++engine){
         cyber::Reverb reverb;reverb.prepare(sr);cyber::Settings s;s.decay=1.5f;s.modDepth=0;reverb.update(s,0);
         double early=0,late=0,total=0,peak=0;auto start=std::chrono::steady_clock::now();

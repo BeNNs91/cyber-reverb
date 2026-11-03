@@ -1,6 +1,8 @@
 # CYBER-REVERB
 
-Windows x64 JUCE algorithmic reverb. VST3 and Standalone. **0.1.0 test build**, intended for listening and Studio One routing tests before production use.
+Windows x64 JUCE algorithmic reverb. VST3 and Standalone. **0.1.1 test build**, intended for listening and Studio One routing tests before production use.
+
+0.1.1 fixes an out-of-bounds fractional delay read at circular-buffer rollover, adds non-finite audio recovery, and reduces the default editor to 1080×720 with smaller labels and size-scaled readouts. A regression test reproduces the invalid boundary read in 0.1.0 and passes with the fix. The full processor is also stress-tested with mono/stereo audio, irregular blocks, live automation, a saturated visualiser FIFO, and non-finite input samples at all five supported sample rates. This fixes a verified memory bug; confirmation of the reported Studio One warning still requires retesting in the host.
 
 ## Build
 
@@ -37,7 +39,7 @@ The display shows the most recent four seconds of audio, with stereo dry peaks i
 
 `PluginProcessor` owns the JUCE parameter tree, sidechain bus, smoothed controls, output filters and detector. Buffers are allocated in `prepareToPlay`; audio processing avoids heap allocation, mutexes, file I/O and GUI calls. A single-producer/single-consumer JUCE AbstractFifo transfers measurement samples to the editor; surplus samples are dropped if the GUI cannot keep up. Timing and meters use atomics. Denormals are disabled. Feedback guards limit extreme internal samples at ±32; these are emergency bounds rather than a master output limiter.
 
-`PluginEditor` draws vector panels and controls using the supplied mockup as a reference. It is resizable from 1000×667 to 1920×1280 with fixed aspect ratio, includes an advanced-section toggle and updates at 30 FPS. CyberMorph's JUCE/CMake/APVTS and custom rotary-control conventions were reviewed before implementation. No extra DSP dependency is required.
+`PluginEditor` draws vector panels and controls using the supplied mockup as a reference. It opens at 1080×720 and is resizable from 900×600 to 1536×1024 with fixed aspect ratio, includes an advanced-section toggle and updates at 30 FPS. Labels, buttons and rotary readouts scale down with the window. CyberMorph's JUCE/CMake/APVTS and custom rotary-control conventions were reviewed before implementation. No extra DSP dependency is required.
 
 ## Reproducible tests and benchmark
 

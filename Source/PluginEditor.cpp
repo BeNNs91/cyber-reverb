@@ -1,7 +1,7 @@
 #include "PluginEditor.h"
 namespace {
 const juce::Colour cyan{0xff00e4f3},text{0xffc6e9f7},orange{0xffffaa46},edge{0xff305362};
-void label(juce::Graphics& g,juce::String s,float x,float y,float w,float h,float fs=17,juce::Justification j=juce::Justification::centred){g.setColour(text);g.setFont(juce::FontOptions(fs*1.13f));g.drawText(s,juce::Rectangle<float>{x,y,w,h},j);}
+void label(juce::Graphics& g,juce::String s,float x,float y,float w,float h,float fs=17,juce::Justification j=juce::Justification::centred){g.setColour(text);g.setFont(juce::FontOptions(fs));g.drawText(s,juce::Rectangle<float>{x,y,w,h},j);}
 }
 CyberLook::CyberLook(){
     setColour(juce::Slider::textBoxTextColourId,text);setColour(juce::Slider::textBoxOutlineColourId,juce::Colours::transparentBlack);
@@ -46,7 +46,7 @@ void CyberLook::drawButtonText(juce::Graphics& g,juce::TextButton& b,bool hover,
     juce::LookAndFeel_V4::drawButtonText(g,b,hover,down);
 }
 ReverbEditor::ReverbEditor(ReverbProcessor& p):AudioProcessorEditor(p),processor(p){
-    setLookAndFeel(&look);setResizable(true,true);setResizeLimits(1000,667,1920,1280);getConstrainer()->setFixedAspectRatio(1.5);setSize(1380,920);
+    setLookAndFeel(&look);setResizable(true,true);setResizeLimits(900,600,1536,1024);getConstrainer()->setFixedAspectRatio(1.5);setSize(1080,720);
     for(int i=0;i<numContinuous;++i){auto& c=controls[i];const auto& s=specs[i];
         c.slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);c.slider.setRotaryParameters(juce::MathConstants<float>::pi*1.25f,juce::MathConstants<float>::pi*2.75f,true);
         c.slider.setTextBoxStyle(juce::Slider::TextBoxBelow,false,110,26);c.slider.setName(s.name);c.slider.setTooltip(juce::String(s.name)+" — drag to adjust; double-click resets. Shift-drag for fine adjustment.");
@@ -99,7 +99,7 @@ void ReverbEditor::resized(){
     bounds(advanced,1078,735,185,38);
     for(int i=16;i<18;++i){float x=1104+float(i-16)*124;bounds(controls[i].label,x-22,786,120,27);bounds(controls[i].slider,x,817,78,111);controls[i].slider.setVisible(expanded);controls[i].label.setVisible(expanded);}
     bounds(tail,1359,837,146,33);tail.setVisible(expanded);bounds(bypass,1367,967,137,33);
-    for(auto& c:controls){c.label.setFont(juce::FontOptions(19*scale));c.slider.setTextBoxStyle(juce::Slider::TextBoxBelow,false,int(125*scale),int(29*scale));}
+    for(auto& c:controls){c.label.setFont(juce::FontOptions(17*scale));c.slider.setTextBoxStyle(juce::Slider::TextBoxBelow,false,int(125*scale),int(29*scale));}
 }
 void ReverbEditor::panel(juce::Graphics& g,juce::Rectangle<float> r){
     juce::Path p;float x=r.getX(),y=r.getY(),w=r.getWidth(),h=r.getHeight(),c=12;
@@ -128,7 +128,7 @@ void ReverbEditor::paint(juce::Graphics& g){
     // Lightweight response symbols reflect the wet filter cutoff position.
     for(int i=0;i<2;++i){float x=i==0?41.f:368.f;juce::Path curve;float v=controls[i+9].slider.valueToProportionOfLength(controls[i+9].slider.getValue());curve.startNewSubPath(x,864);if(i==0)curve.cubicTo(x+9,864,x+8+v*10,842,x+34,844);else curve.cubicTo(x+26,842,x+23-v*10,864,x+34,864);g.setColour(cyan);g.strokePath(curve,juce::PathStrokeType(2.5f));}
     g.setColour(edge);g.drawLine(0,954,1536,954);label(g,"C",34,965,45,40,33);label(g,"CYBER AUDIO",89,974,220,25,18,juce::Justification::centredLeft);
-    const char* e[]={"HALL","LARGE HALL","PLATE"};label(g,e[int(processor.parameters.getRawParameterValue("engine")->load())],1008,974,140,25,16);
+    const char* e[]={"HALL","LARGE HALL","PLATE"};label(g,e[juce::jlimit(0,2,int(processor.parameters.getRawParameterValue("engine")->load()))],1008,974,140,25,16);
     label(g,processor.parameters.getRawParameterValue("character")->load()>.5f?"VINTAGE":"MODERN",1150,974,110,25,16);
     label(g,juce::String(processor.cpu.load(),1)+"% CPU",1261,974,100,25,14);
     if(processor.parameters.getRawParameterValue("source")->load()>1.5f&&!processor.externalConnected.load())label(g,"External sidechain not connected",500,935,530,20,12);

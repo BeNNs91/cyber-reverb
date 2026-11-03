@@ -14,10 +14,16 @@ struct Delay {
     void prepare(int n) { data.assign(size_t(n+8),0); pos=0; }
     void clear() { std::fill(data.begin(),data.end(),0.f); pos=0; }
     float read(float samples) const noexcept {
-        float p=float(pos)-clamp(samples,1,float(data.size()-3));
-        if(p<0) p+=float(data.size());
-        int a=int(p); float f=p-float(a); int b=a+1; if(b==int(data.size())) b=0;
-        return data[size_t(a)] + f*(data[size_t(b)]-data[size_t(a)]);
+        // Keep wrapping in integer space. Adding a tiny negative fractional
+        // position to a large float buffer length can round up to size(),
+        // producing a one-past-the-end read in the original implementation.
+        const int size=int(data.size());
+        if(size<4)return 0;
+        samples=std::isfinite(samples)?clamp(samples,1,float(size-3)):1.f;
+        const int whole=int(samples);const float fraction=samples-float(whole);
+        int current=pos-whole;if(current<0)current+=size;
+        const int previous=current==0?size-1:current-1;
+        return data[size_t(current)] + fraction*(data[size_t(previous)]-data[size_t(current)]);
     }
     void write(float x) noexcept { data[size_t(pos)]=x; if(++pos==int(data.size())) pos=0; }
 };

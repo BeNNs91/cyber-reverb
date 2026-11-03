@@ -7,9 +7,9 @@ public:
     void drawRotarySlider(juce::Graphics&,int,int,int,int,float,float,float,juce::Slider&) override;
     void drawButtonBackground(juce::Graphics&,juce::Button&,const juce::Colour&,bool,bool) override;
     void drawButtonText(juce::Graphics&,juce::TextButton&,bool,bool) override;
-    juce::Font getTextButtonFont(juce::TextButton&,int height) override {return juce::Font(juce::FontOptions(float(height)*.40f));}
-    juce::Label* createSliderTextBox(juce::Slider& slider) override {auto* label=juce::LookAndFeel_V4::createSliderTextBox(slider);label->setFont(juce::FontOptions(20.f));return label;}
-    juce::Font getComboBoxFont(juce::ComboBox& c) override {return juce::Font(juce::FontOptions(float(c.getHeight())*.48f));}
+    juce::Font getTextButtonFont(juce::TextButton&,int height) override {return juce::Font(juce::FontOptions(float(height)*.36f));}
+    juce::Label* createSliderTextBox(juce::Slider& slider) override {auto* label=juce::LookAndFeel_V4::createSliderTextBox(slider);label->setFont(juce::FontOptions(float(slider.getTextBoxHeight())*.58f));return label;}
+    juce::Font getComboBoxFont(juce::ComboBox& c) override {return juce::Font(juce::FontOptions(float(c.getHeight())*.43f));}
 };
 class ReverbEditor final:public juce::AudioProcessorEditor,private juce::Timer {
 public:
