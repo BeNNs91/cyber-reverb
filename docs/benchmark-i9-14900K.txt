@@ -1,0 +1,20 @@
+SR 44100 engine 0 peak 0.0156029 energy 0.056933 late/early 2.78721e-17 CPU 1.30034%
+SR 44100 engine 1 peak 0.0090303 energy 0.0245026 late/early 2.69497e-17 CPU 1.29828%
+SR 44100 engine 2 peak 0.049676 energy 0.136753 late/early 2.71974e-13 CPU 1.29944%
+SR 48000 engine 0 peak 0.014627 energy 0.0495228 late/early 2.90958e-17 CPU 1.41154%
+SR 48000 engine 1 peak 0.00788937 energy 0.0212451 late/early 2.90117e-17 CPU 1.41825%
+SR 48000 engine 2 peak 0.0451538 energy 0.130167 late/early 2.66214e-13 CPU 1.41663%
+SR 88200 engine 0 peak 0.0153108 energy 0.0503594 late/early 1.79478e-17 CPU 2.58596%
+SR 88200 engine 1 peak 0.00760055 energy 0.0221354 late/early 1.52725e-17 CPU 2.58526%
+SR 88200 engine 2 peak 0.0446142 energy 0.119936 late/early 1.67448e-13 CPU 2.59645%
+SR 96000 engine 0 peak 0.0238158 energy 0.0639675 late/early 1.29995e-17 CPU 2.82227%
+SR 96000 engine 1 peak 0.0116157 energy 0.02951 late/early 1.06743e-17 CPU 2.82798%
+SR 96000 engine 2 peak 0.0553092 energy 0.132552 late/early 1.41015e-13 CPU 2.82825%
+SR 192000 engine 0 peak 0.0171245 energy 0.050055 late/early 8.66495e-18 CPU 5.62493%
+SR 192000 engine 1 peak 0.00827043 energy 0.0232806 late/early 6.75093e-18 CPU 5.63174%
+SR 192000 engine 2 peak 0.0486827 energy 0.116992 late/early 8.16331e-14 CPU 5.63565%
+Freeze engine 0 energy retention after 30s 0.722739
+Freeze engine 1 energy retention after 30s 1.02348
+Freeze engine 2 energy retention after 30s 0.789116
+Extreme/freeze peak 4.15394
+All DSP checks passed.
