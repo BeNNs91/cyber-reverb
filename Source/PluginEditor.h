@@ -34,7 +34,7 @@ private:
     std::unique_ptr<juce::FileChooser> chooser;
     juce::TooltipWindow tooltip{this,650};
     bool expanded=true;int lastPreset=-1;
-    std::array<float,480> dryHistory{},wetHistory{};int historyPos=0,bucketCount=0;float bucketDry=0,bucketWet=0;
+    std::array<float,480> dryHistory{},wetHistory{},sidechainHistory{};int historyPos=0,bucketCount=0;float bucketDry=0,bucketWet=0,bucketSidechain=0;
     std::array<cyber::Stereo,768> stereoPoints{};int stereoPos=0;
     juce::dsp::FFT fft{10};juce::dsp::WindowingFunction<float> window{1024,juce::dsp::WindowingFunction<float>::hann};
     std::array<float,1024> fftRing{};std::array<float,2048> fftData{};int fftPos=0;

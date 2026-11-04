@@ -14,6 +14,11 @@ int main(int argc,char** argv){juce::ScopedJuceInitialiser_GUI init;try{
     auto layout=p.getBusesLayout();layout.inputBuses.getReference(1)=juce::AudioChannelSet::stereo();require(p.setBusesLayout(layout),"Stereo sidechain rejected");
     p.setParam("source",2);p.prepareToPlay(48000,256);b.setSize(4,256);for(int block=0;block<150;++block){b.clear();for(int i=0;i<256;++i){b.setSample(2,i,.8f);b.setSample(3,i,.8f);}p.processBlock(b,midi);}require(p.reduction.load()>6,"External sidechain does not duck");
     require(p.getLatencySamples()==0,"Unexpected latency");
+    p.analysing.store(true);p.setParam("source",1);b.clear();for(int i=0;i<256;++i)b.setSample(0,i,.4f);p.processBlock(b,midi);
+    require(p.analysisFifo.getNumReady()>0&&p.analysis[255].sidechain>0,"Internal detector is missing from analysis stream");
+    auto legacy=p.parameters.copyState();for(auto child:legacy)if(child.getProperty("id").toString()=="engine")child.setProperty("value",0.f,nullptr);
+    juce::MemoryBlock legacyData;juce::AudioProcessor::copyXmlToBinary(*legacy.createXml(),legacyData);restored.setStateInformation(legacyData.getData(),int(legacyData.getSize()));
+    require(restored.parameters.getRawParameterValue("engine")->load()==1,"Legacy Hall did not migrate to Hall");
     // Exercise modulation, automation, mono/stereo layouts and irregular host
     // blocks through the complete processor, with the analyser FIFO saturated.
     for(double rate:{44100.,48000.,88200.,96000.,192000.})for(int channels:{1,2}){
@@ -27,9 +32,10 @@ int main(int argc,char** argv){juce::ScopedJuceInitialiser_GUI init;try{
         }
     }
     // Render a real editor snapshot without launching an audio device.
-    if(argc>1){auto preview=std::make_unique<ReverbProcessor>();preview->setRateAndBufferSizeDetails(48000,1600);preview->prepareToPlay(48000,1600);ReverbEditor editor(*preview);require(editor.getWidth()==1080&&editor.getHeight()==720,"Editor is not compact by default");
+    if(argc>1){auto preview=std::make_unique<ReverbProcessor>();preview->setParam("source",1);preview->setRateAndBufferSizeDetails(48000,1600);preview->prepareToPlay(48000,1600);ReverbEditor editor(*preview);require(editor.getWidth()==900&&editor.getHeight()==600,"Editor is not compact by default");
         juce::AudioBuffer<float> signal(2,1600);juce::Random random(42);
         for(int frame=0;frame<120;++frame){for(int i=0;i<1600;++i){int t=frame*1600+i;float burst=t<4800?(random.nextFloat()*2-1)*std::exp(-float(t)/1000)*.8f:0;signal.setSample(0,i,burst);signal.setSample(1,i,burst);}preview->processBlock(signal,midi);editor.refreshMeasurements();}
         editor.savePreview(juce::File(juce::String::fromUTF8(argv[1])));}
     std::cout<<"Dry isolation, stereo, state recall, sidechain, latency, finite-output automation stress at five rates, and editor checks passed.\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+

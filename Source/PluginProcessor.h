@@ -4,8 +4,8 @@
 
 struct ParamSpec { const char* id; const char* name; float lo,hi,def,skew; const char* unit; };
 inline constexpr ParamSpec specs[] = {
-    {"predelay","PRE-DELAY",0,250,24,.6f," ms"},{"size","SIZE",0,100,65,1," %"},
-    {"decay","DECAY",.1f,30,2.8f,.4f," s"},{"diffusion","DIFFUSION",0,100,75,1," %"},
+    {"predelay","PRE-DELAY",0,250,12,.6f," ms"},{"size","SIZE",0,100,45,1," %"},
+    {"decay","DECAY",.1f,30,.85f,.4f," s"},{"diffusion","DIFFUSION",0,100,75,1," %"},
     {"damping","DAMPING",0,100,50,1," %"},{"width","WIDTH",0,200,100,1," %"},
     {"mix","MIX",0,100,35,1," %"},{"input","INPUT",-24,24,0,1," dB"},
     {"output","OUTPUT",-24,24,0,1," dB"},{"highpass","HIGH-PASS",20,2000,120,.3f," Hz"},
@@ -16,7 +16,7 @@ inline constexpr ParamSpec specs[] = {
     {"modrate","MOD RATE",.01f,5,.3f,.4f," Hz"}
 };
 constexpr int numContinuous=int(std::size(specs));
-struct AnalysisFrame { float dry,wet,l,r; };
+struct AnalysisFrame { float dry,wet,l,r,sidechain; };
 class ReverbProcessor final : public juce::AudioProcessor {
 public:
     ReverbProcessor();

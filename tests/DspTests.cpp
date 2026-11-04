@@ -34,6 +34,10 @@ int main(){try{
     for(int engine=0;engine<3;++engine){cyber::Reverb held;held.prepare(48000);cyber::Settings freeze;freeze.modDepth=0;double early=0,late=0;
         for(int i=0;i<48000*32;++i){if(i%32==0){freeze.freeze=i>=48000?1.f:0.f;held.update(freeze,24);}float input=i<48000?std::sin(float(i)*.07f)*.05f:0;auto y=held.tick({input,input},engine);double e=double(y.l)*y.l+double(y.r)*y.r;if(i>=48000*2&&i<48000*3)early+=e;if(i>=48000*31)late+=e;}
         std::cout<<"Freeze engine "<<engine<<" energy retention after 30s "<<late/early<<"\n";require(late<early*1.2,"Freeze builds energy");require(late>early*.05,"Freeze loses its tail too quickly");}
+    {cyber::Room room;cyber::Hall<16> hall;cyber::Plate plate;room.prepare(48000);hall.prepare(48000);plate.prepare(48000);cyber::Settings settings;settings.modDepth=0;room.update(settings);hall.update(settings);plate.update(settings);
+        double roomEarly=0,hallEarly=0,hallEnergy=0,plateEnergy=0,cross=0;
+        for(int i=0;i<48000;++i){cyber::Stereo impulse{i==0?1.f:0.f,i==0?1.f:0.f};auto r=room.tick(impulse),h=hall.tick(impulse),p=plate.tick(impulse);if(i<960){roomEarly+=r.l*r.l;hallEarly+=h.l*h.l;}hallEnergy+=h.l*h.l;plateEnergy+=p.l*p.l;cross+=h.l*p.l;}
+        require(roomEarly>hallEarly*10+1.e-4,"Room does not have distinct early reflections");require(std::abs(cross)/std::sqrt(hallEnergy*plateEnergy)<.5,"Hall and Plate responses are too similar");}
     cyber::Reverb reverb;reverb.prepare(48000);cyber::Settings s;
     float maximum=0;
     // Extremes, changing engine, delay, damping and freeze during a live tail.

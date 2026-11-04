@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(CyberReverb VERSION 0.1.1 LANGUAGES C CXX)
+project(CyberReverb VERSION 0.2.0 LANGUAGES C CXX)
 include(FetchContent)
 FetchContent_Declare(JUCE GIT_REPOSITORY https://github.com/juce-framework/JUCE.git GIT_TAG 8.0.16-security GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(JUCE)

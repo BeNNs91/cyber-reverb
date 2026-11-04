@@ -28,9 +28,9 @@ void CyberLook::drawButtonBackground(juce::Graphics& g,juce::Button& b,const juc
     if(on||hover){g.setColour(c.withAlpha(.08f));g.drawRoundedRectangle(r.reduced(2),6,8);}
     g.setColour(on?c:(hover||down?text:edge));g.drawRoundedRectangle(r,7,on?2.f:1.f);
     auto name=b.getButtonText();float sx=float(b.getWidth())/220,sy=float(b.getHeight())/49;
-    if(name=="HALL"||name=="LARGE HALL"){
+    if(name=="HALL"||name=="SMALL ROOM"){
         g.setColour(on?cyan:text);for(int i=0;i<4;++i){float radius=(19.f-float(i)*4)*sy;float cx=66*sx,cy=29*sy;juce::Path arch;arch.addCentredArc(cx,cy,radius,radius,0,-juce::MathConstants<float>::halfPi,juce::MathConstants<float>::halfPi,true);g.strokePath(arch,juce::PathStrokeType(1.5f*sy));g.drawLine(cx-radius,cy,cx-radius,40*sy,1.5f*sy);g.drawLine(cx+radius,cy,cx+radius,40*sy,1.5f*sy);}g.drawLine(44*sx,40*sy,88*sx,40*sy,1.5f*sy);
-    }else if(name=="PLATE"){
+    }else if(name=="SPRINGY PLATE"){
         g.setColour(on?cyan:text);for(int i=0;i<7;++i)g.drawLine((45+float(i)*5)*sx,9*sy,(45+float(i)*5)*sx,39*sy,1.5f*sy);
     }else if(name=="FREEZE"){
         float cx=25*float(b.getWidth())/158,cy=float(b.getHeight())*.5f,rad=float(b.getHeight())*.22f;g.setColour(on?cyan:text);
@@ -38,7 +38,7 @@ void CyberLook::drawButtonBackground(juce::Graphics& g,juce::Button& b,const juc
     }
 }
 void CyberLook::drawButtonText(juce::Graphics& g,juce::TextButton& b,bool hover,bool down){
-    auto name=b.getButtonText();bool engine=name=="HALL"||name=="LARGE HALL"||name=="PLATE";
+    auto name=b.getButtonText();bool engine=name=="HALL"||name=="SMALL ROOM"||name=="SPRINGY PLATE";
     if(engine||name=="FREEZE"){
         auto area=b.getLocalBounds().toFloat();area.removeFromLeft(area.getWidth()*(engine?.40f:.25f));area.removeFromRight(7);
         g.setFont(getTextButtonFont(b,b.getHeight()));g.setColour(b.getToggleState()?cyan:text);g.drawText(name,area,juce::Justification::centred);return;
@@ -46,7 +46,7 @@ void CyberLook::drawButtonText(juce::Graphics& g,juce::TextButton& b,bool hover,
     juce::LookAndFeel_V4::drawButtonText(g,b,hover,down);
 }
 ReverbEditor::ReverbEditor(ReverbProcessor& p):AudioProcessorEditor(p),processor(p){
-    setLookAndFeel(&look);setResizable(true,true);setResizeLimits(900,600,1536,1024);getConstrainer()->setFixedAspectRatio(1.5);setSize(1080,720);
+    setLookAndFeel(&look);setResizable(true,true);setResizeLimits(900,600,1536,1024);getConstrainer()->setFixedAspectRatio(1.5);setSize(900,600);
     for(int i=0;i<numContinuous;++i){auto& c=controls[i];const auto& s=specs[i];
         c.slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);c.slider.setRotaryParameters(juce::MathConstants<float>::pi*1.25f,juce::MathConstants<float>::pi*2.75f,true);
         c.slider.setTextBoxStyle(juce::Slider::TextBoxBelow,false,110,26);c.slider.setName(s.name);c.slider.setTooltip(juce::String(s.name)+" — drag to adjust; double-click resets. Shift-drag for fine adjustment.");
@@ -54,7 +54,7 @@ ReverbEditor::ReverbEditor(ReverbProcessor& p):AudioProcessorEditor(p),processor
         c.label.setText(s.name,juce::dontSendNotification);c.label.setJustificationType(juce::Justification::centred);c.label.setColour(juce::Label::textColourId,text);addAndMakeVisible(c.label);
         c.attachment=std::make_unique<SliderAttachment>(p.parameters,s.id,c.slider);
     }
-    const char* names[]={"HALL","LARGE HALL","PLATE"};for(int i=0;i<3;++i){engines[i].setButtonText(names[i]);engines[i].onClick=[this,i]{processor.setParam("engine",float(i));};addAndMakeVisible(engines[i]);}
+    const char* names[]={"SMALL ROOM","HALL","SPRINGY PLATE"};for(int i=0;i<3;++i){engines[i].setButtonText(names[i]);engines[i].onClick=[this,i]{processor.setParam("engine",float(i));};addAndMakeVisible(engines[i]);}
     for(int i=0;i<2;++i){characters[i].setButtonText(i==0?"MODERN":"VINTAGE");characters[i].setName(i==0?"Modern":"Vintage");characters[i].onClick=[this,i]{processor.setParam("character",float(i));};addAndMakeVisible(characters[i]);}characters[1].setColour(juce::TextButton::textColourOnId,orange);
     for(auto* b:{&previous,&next,&save,&load,&undoButton,&redoButton,&freeze,&wetOnly,&advanced,&bypass})addAndMakeVisible(b);
     for(auto* b:{&freeze,&wetOnly,&bypass})b->setClickingTogglesState(true);
@@ -128,7 +128,7 @@ void ReverbEditor::paint(juce::Graphics& g){
     // Lightweight response symbols reflect the wet filter cutoff position.
     for(int i=0;i<2;++i){float x=i==0?41.f:368.f;juce::Path curve;float v=controls[i+9].slider.valueToProportionOfLength(controls[i+9].slider.getValue());curve.startNewSubPath(x,864);if(i==0)curve.cubicTo(x+9,864,x+8+v*10,842,x+34,844);else curve.cubicTo(x+26,842,x+23-v*10,864,x+34,864);g.setColour(cyan);g.strokePath(curve,juce::PathStrokeType(2.5f));}
     g.setColour(edge);g.drawLine(0,954,1536,954);label(g,"C",34,965,45,40,33);label(g,"CYBER AUDIO",89,974,220,25,18,juce::Justification::centredLeft);
-    const char* e[]={"HALL","LARGE HALL","PLATE"};label(g,e[juce::jlimit(0,2,int(processor.parameters.getRawParameterValue("engine")->load()))],1008,974,140,25,16);
+    const char* e[]={"SMALL ROOM","HALL","SPRINGY PLATE"};label(g,e[juce::jlimit(0,2,int(processor.parameters.getRawParameterValue("engine")->load()))],1008,974,140,25,14);
     label(g,processor.parameters.getRawParameterValue("character")->load()>.5f?"VINTAGE":"MODERN",1150,974,110,25,16);
     label(g,juce::String(processor.cpu.load(),1)+"% CPU",1261,974,100,25,14);
     if(processor.parameters.getRawParameterValue("source")->load()>1.5f&&!processor.externalConnected.load())label(g,"External sidechain not connected",500,935,530,20,12);
@@ -156,6 +156,10 @@ void ReverbEditor::drawVisualiser(juce::Graphics& g){
         for(int i=479;i>=0;--i){float x=237+float(i)*878/479;float amp=std::min(100.f,std::sqrt(hist[size_t((historyPos+i)%480)])*85);p.lineTo(x,326+amp);}p.closeSubPath();
         auto c=type==0?orange:cyan;g.setColour(c.withAlpha(.23f));g.fillPath(p);g.setColour(c.withAlpha(.8f));g.strokePath(p,juce::PathStrokeType(.8f));
     }
+    if(processor.parameters.getRawParameterValue("source")->load()==1.f){
+        juce::Path trace;for(int i=0;i<480;++i){float x=237+float(i)*878/479;float envelope=sidechainHistory[size_t((historyPos+i)%480)];float y=459-std::min(60.f,std::sqrt(envelope)*60);if(i==0)trace.startNewSubPath(x,y);else trace.lineTo(x,y);}
+        g.setColour(juce::Colours::white.withAlpha(.9f));g.strokePath(trace,juce::PathStrokeType(1.1f));label(g,"SIDECHAIN",972,445,135,19,11);
+    }
     panel(g,{1133,227,221,246});label(g,"STEREO FIELD",1150,233,187,32,17);
     float cx=1244,cy=350,r=77;g.setColour(edge);g.drawEllipse(cx-r,cy-r,2*r,2*r,1);g.drawLine(cx-r-4,cy,cx+r+4,cy);g.drawLine(cx,cy-r-4,cx,cy+r+4);
     g.setColour(cyan.withAlpha(.5f));for(auto v:stereoPoints){float side=(v.l-v.r)*.707f,mid=(v.l+v.r)*.707f;float px=cyber::clamp(side*95,-73,73),py=cyber::clamp(mid*95,-73,73);if(std::abs(px)+std::abs(py)>.1f)g.fillEllipse(cx+px,cy-py,1.6f,1.6f);}
@@ -169,7 +173,8 @@ void ReverbEditor::timerCallback(){
     int a,n,b,m;processor.analysisFifo.prepareToRead(processor.analysisFifo.getNumReady(),a,n,b,m);
     int count=0;auto consume=[&](int start,int length){for(int i=0;i<length;++i){auto frame=processor.analysis[size_t(start+i)];
         bucketDry=std::max(bucketDry,std::abs(frame.dry));bucketWet=std::max(bucketWet,std::max(std::abs(frame.l),std::abs(frame.r)));
-        if(++bucketCount>=std::max(1,int(processor.getSampleRate()/120))){dryHistory[historyPos]=bucketDry;wetHistory[historyPos]=bucketWet;historyPos=(historyPos+1)%480;bucketCount=0;bucketDry=bucketWet=0;}
+        bucketSidechain=std::max(bucketSidechain,frame.sidechain);
+        if(++bucketCount>=std::max(1,int(processor.getSampleRate()/120))){dryHistory[historyPos]=bucketDry;wetHistory[historyPos]=bucketWet;sidechainHistory[historyPos]=bucketSidechain;historyPos=(historyPos+1)%480;bucketCount=0;bucketDry=bucketWet=bucketSidechain=0;}
         fftRing[fftPos]=frame.wet;fftPos=(fftPos+1)%1024;
         if((count++&15)==0){stereoPoints[stereoPos]={frame.l,frame.r};stereoPos=(stereoPos+1)%768;}
     }};consume(a,n);consume(b,m);processor.analysisFifo.finishedRead(n+m);

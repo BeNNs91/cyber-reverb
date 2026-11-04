@@ -4,15 +4,15 @@
 namespace {
 struct Preset { const char* name;int engine,character;float pre,size,decay,diff,damp,width,mix,hp,lp,mod; };
 constexpr Preset presets[]={
- {"Classic Hall Wide",0,0,24,65,2.8f,75,50,100,35,120,12000,10},
- {"Vocal / Clear Air",0,0,48,52,1.9f,88,40,115,25,180,13500,8},
- {"Snare / Chrome Room",0,0,12,35,.85f,80,30,110,28,160,15000,5},
- {"Vintage / Velvet Hall",0,1,28,62,3.4f,82,65,120,35,160,8500,20},
+ {"Small Room / Tight",0,0,12,45,.85f,75,50,100,35,120,12000,10},
+ {"Room / Vocal Air",0,0,18,62,1.2f,80,35,110,25,180,13500,8},
+ {"Room / Vintage Drums",0,1,5,35,.55f,65,40,100,28,160,11000,5},
+ {"Hall / Smooth Wide",1,0,28,62,3.4f,88,45,120,35,160,12000,15},
  {"Atmosphere / Wide Horizon",1,0,32,88,9.5f,92,45,155,45,100,12500,22},
  {"Synth / Deep Orbit",1,1,65,95,14,88,70,170,42,200,7000,35},
- {"Drums / Silver Plate",2,0,8,45,1.3f,90,25,100,25,150,15000,8},
- {"Vocal / Vintage Gold",2,1,42,62,2.6f,85,58,110,30,180,10500,25},
- {"Snare / Long Plate",2,0,18,75,4.2f,95,40,135,35,160,13000,12}
+ {"Springy Plate / Snare",2,0,8,45,1.3f,65,25,100,25,150,15000,8},
+ {"Springy Plate / Vintage Gold",2,1,42,62,2.6f,65,48,110,30,180,12500,25},
+ {"Springy Plate / Long",2,0,18,75,4.2f,75,30,135,35,160,15000,12}
 };
 }
 juce::AudioProcessorValueTreeState::ParameterLayout ReverbProcessor::layout() {
@@ -26,7 +26,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout ReverbProcessor::layout() {
                 return juce::String(v,decimals)+s.unit;
             }).withValueFromStringFunction([](const juce::String& t){return t.getFloatValue()*(t.containsIgnoreCase("khz")?1000.f:1.f);} )));
     }
-    p.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{"engine",1},"Reverb engine",juce::StringArray{"Hall","Large Hall","Plate"},0));
+    p.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{"engine",1},"Reverb engine",juce::StringArray{"Small Room","Hall","Springy Plate"},0));
     p.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{"character",1},"Character",juce::StringArray{"Modern","Vintage"},0));
     p.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{"source",1},"Sidechain source",juce::StringArray{"Off","Internal","External (DAW)"},0));
     p.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{"tail",1},"Tail behaviour",juce::StringArray{"Natural","Cut","Tail bypass"},0));
@@ -109,7 +109,7 @@ void ReverbProcessor::process(juce::AudioBuffer<float>& buffer,bool hostBypass) 
         if(outs==1)main.setSample(0,s,(out[0]+out[1])*.5f);else{main.setSample(0,s,out[0]);main.setSample(1,s,out[1]);}
         inPeak[0]=std::max(inPeak[0],std::abs(dry.l));inPeak[1]=std::max(inPeak[1],std::abs(dry.r));
         for(int c=0;c<2;++c)outPeak[c]=std::max(outPeak[c],std::abs(out[c]));
-        if(capture&&s<size1+size2) {int index=s<size1?write1+s:write2+s-size1;analysis[size_t(index)]={std::abs(dry.l)>std::abs(dry.r)?dry.l:dry.r,wet.l,wet.l,wet.r};++written;}
+        if(capture&&s<size1+size2) {int index=s<size1?write1+s:write2+s-size1;analysis[size_t(index)]={std::abs(dry.l)>std::abs(dry.r)?dry.l:dry.r,wet.l,wet.l,wet.r,src==1?detector:0.f};++written;}
     }
     if(written)analysisFifo.finishedWrite(written);
     for(int c=0;c<2;++c){
@@ -132,7 +132,10 @@ void ReverbProcessor::applyFactory(int index){
     setParam("freeze",0);setParam("wetonly",0);setParam("tail",0);setParam("source",0);setParam("bypass",0);
     currentPreset.store(index);
 }
-void ReverbProcessor::getStateInformation(juce::MemoryBlock& b){auto state=parameters.copyState();state.setProperty("preset",currentPreset.load(),nullptr);if(auto xml=state.createXml())copyXmlToBinary(*xml,b);}
-void ReverbProcessor::setStateInformation(const void* d,int n){if(auto xml=getXmlFromBinary(d,n))if(xml->hasTagName(parameters.state.getType())){auto state=juce::ValueTree::fromXml(*xml);parameters.replaceState(state);currentPreset.store(juce::jlimit(0,getNumPrograms()-1,int(state.getProperty("preset",0))));}}
+void ReverbProcessor::getStateInformation(juce::MemoryBlock& b){auto state=parameters.copyState();state.setProperty("preset",currentPreset.load(),nullptr);state.setProperty("engineSchema",2,nullptr);if(auto xml=state.createXml())copyXmlToBinary(*xml,b);}
+void ReverbProcessor::setStateInformation(const void* d,int n){if(auto xml=getXmlFromBinary(d,n))if(xml->hasTagName(parameters.state.getType())){auto state=juce::ValueTree::fromXml(*xml);
+    // Old Hall and Large Hall sessions both load the new Hall. Plate remains slot 2.
+    if(int(state.getProperty("engineSchema",1))<2)for(auto child:state)if(child.getProperty("id").toString()=="engine"&&float(child.getProperty("value"))<1.5f)child.setProperty("value",1.f,nullptr);
+    parameters.replaceState(state);currentPreset.store(juce::jlimit(0,getNumPrograms()-1,int(state.getProperty("preset",0))));}}
 juce::AudioProcessorEditor* ReverbProcessor::createEditor(){return new ReverbEditor(*this);}
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter(){return new ReverbProcessor();}
