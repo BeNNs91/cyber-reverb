@@ -1,10 +1,10 @@
 # CYBER-REVERB
 
-Windows x64 JUCE algorithmic reverb. VST3 and Standalone. **0.2.0 listening-tuning build**, intended for listening and Studio One routing tests before production use.
+Windows x64 JUCE algorithmic reverb. VST3 and Standalone. **0.2.1 listening-tuning build**, intended for listening and Studio One routing tests before production use.
 
 0.1.1 fixes an out-of-bounds fractional delay read at circular-buffer rollover, adds non-finite audio recovery, and reduces the default editor to 1080×720 with smaller labels and size-scaled readouts. A regression test reproduces the invalid boundary read in 0.1.0 and passes with the fix. The full processor is also stress-tested with mono/stereo audio, irregular blocks, live automation, a saturated visualiser FIFO, and non-finite input samples at all five supported sample rates. This fixes a verified memory bug; confirmation of the reported Studio One warning still requires retesting in the host.
 
-See CHANGELOG.md for the 0.2.0 engine redesign, internal-sidechain trace and legacy-state migration.
+See CHANGELOG.md for the engine redesign and the 0.2.1 Room reference-tuning pass. Select Room / Reference to audition the measured one-second Room setup; enable Wet Only for a wet-only comparison.
 
 ## Build
 

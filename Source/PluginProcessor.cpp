@@ -12,7 +12,8 @@ constexpr Preset presets[]={
  {"Synth / Deep Orbit",1,1,65,95,14,88,70,170,42,200,7000,35},
  {"Springy Plate / Snare",2,0,8,45,1.3f,65,25,100,25,150,15000,8},
  {"Springy Plate / Vintage Gold",2,1,42,62,2.6f,65,48,110,30,180,12500,25},
- {"Springy Plate / Long",2,0,18,75,4.2f,75,30,135,35,160,15000,12}
+ {"Springy Plate / Long",2,0,18,75,4.2f,75,30,135,35,160,15000,12},
+ {"Room / Reference",0,0,0,50,1.f,75,50,100,35,120,12000,0}
 };
 }
 juce::AudioProcessorValueTreeState::ParameterLayout ReverbProcessor::layout() {

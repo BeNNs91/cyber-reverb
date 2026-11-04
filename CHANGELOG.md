@@ -1,5 +1,14 @@
 # CYBER-REVERB changelog
 
+## 0.2.1 — Room reference tuning
+
+- Tuned our Room engine using the user's matched dry-snare / wet-reference exports.
+- Increased diffuse late energy relative to upfront reflections, compensated decay losses, opened the Room damping response and increased intrinsic stereo spread.
+- Added Room / Reference preset: Modern, pre-delay 0 ms, size 50%, decay 1 s, modulation off, mix 35%. Use Wet Only to compare with a wet-only reference.
+- Hall and Springy Plate DSP are unchanged.
+- Added an offline matched-input WAV-render utility. No reference audio is distributed in the repository and no proprietary algorithm or source code was imported.
+- Listening feedback remains the acceptance criterion; matching decay/energy/spread measurements does not recreate the complete reference sound.
+
 ## 0.2.0 — First listening-tuning pass
 
 - Default GUI opens at the minimum 900×600 size, with scaled controls and text.

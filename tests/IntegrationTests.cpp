@@ -5,6 +5,19 @@
 #include <limits>
 void require(bool ok,const char* m){if(!ok)throw std::runtime_error(m);}
 int main(int argc,char** argv){juce::ScopedJuceInitialiser_GUI init;try{
+    if(argc==4&&juce::String(argv[1])=="--render-room"){
+        juce::AudioFormatManager formats;formats.registerBasicFormats();
+        std::unique_ptr<juce::AudioFormatReader> reader(formats.createReaderFor(juce::File(juce::String::fromUTF8(argv[2]))));require(reader!=nullptr,"Cannot read reference input");
+        int length=int(reader->lengthInSamples);juce::AudioBuffer<float> input(2,length),result(2,length);reader->read(&input,0,length,0,true,true);
+        auto processor=std::make_unique<ReverbProcessor>();
+        processor->setParam("engine",0);processor->setParam("mix",100);processor->setParam("predelay",0);processor->setParam("decay",1);processor->setParam("size",50);processor->setParam("moddepth",0);
+        processor->setRateAndBufferSizeDetails(reader->sampleRate,256);processor->prepareToPlay(reader->sampleRate,256);juce::MidiBuffer events;
+        for(int start=0;start<length;start+=256){int count=std::min(256,length-start);juce::AudioBuffer<float> block(2,count);for(int c=0;c<2;++c)block.copyFrom(c,0,input,c,start,count);processor->processBlock(block,events);for(int c=0;c<2;++c)result.copyFrom(c,start,block,c,0,count);}
+        auto file=juce::File(juce::String::fromUTF8(argv[3]));require(!file.existsAsFile(),"Render output already exists");
+        auto stream=file.createOutputStream();require(stream!=nullptr,"Cannot create render output");
+        juce::WavAudioFormat wav;std::unique_ptr<juce::AudioFormatWriter> writer(wav.createWriterFor(stream.release(),reader->sampleRate,2,24,{},0));require(writer!=nullptr,"Cannot create WAV writer");require(writer->writeFromAudioSampleBuffer(result,0,length),"Cannot write WAV");
+        std::cout<<"Rendered Room: wet 100%, pre-delay 0 ms, decay 1 s, size 50%, modulation 0%, default filters/damping.\n";return 0;
+    }
     auto storage=std::make_unique<ReverbProcessor>();auto& p=*storage;p.setParam("mix",0);p.setRateAndBufferSizeDetails(48000,256);p.prepareToPlay(48000,256);juce::AudioBuffer<float> b(2,256);juce::MidiBuffer midi;
     for(int i=0;i<256;++i){b.setSample(0,i,.2f);b.setSample(1,i,-.1f);}p.processBlock(b,midi);
     for(int i=0;i<256;++i){require(std::abs(b.getSample(0,i)-.2f)<1.e-6f,"Dry signal was filtered");require(std::abs(b.getSample(1,i)+.1f)<1.e-6f,"Stereo dry changed");}

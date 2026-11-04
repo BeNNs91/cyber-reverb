@@ -94,13 +94,13 @@ public:
 };
 
 // Compact room: discrete stereo early reflections followed by a short-path FDN.
-// This is our own design; Valhalla Room is a listening direction, not measured data.
+// Independently implemented; tuned against the user's dry/wet snare reference.
 class Room {
     Hall<8> late;std::array<Delay,2> early;float sr=48000,scale=1,feed=1;
 public:
     void prepare(double rate){sr=float(rate);late.prepare(rate);for(auto& d:early)d.prepare(int(sr*.12f));}
     void clear(){late.clear();for(auto& d:early)d.clear();}
-    void update(const Settings& s){late.update(s);scale=.35f+s.size*.9f;feed=1-s.freeze;}
+    void update(const Settings& s){auto room=s;room.decay=s.decay*1.18f;room.damping=s.damping*.8f;late.update(room);scale=.35f+s.size*.9f;feed=1-s.freeze;}
     Stereo tick(Stereo in){
         constexpr float times[]={3.7f,7.1f,11.3f,17.9f,23.3f,31.7f};
         constexpr float gains[]={.36f,.27f,.21f,.16f,.12f,.09f};Stereo reflections;
@@ -108,7 +108,10 @@ public:
             reflections.l+=gains[i]*(early[0].read(t)*.8f+early[1].read(t*1.13f)*.2f);
             reflections.r+=gains[i]*(early[1].read(t*1.07f)*.8f+early[0].read(t*.93f)*.2f);}
         early[0].write(in.l*feed);early[1].write(in.r*feed);auto tail=late.tick(in);
-        return {reflections.l*.65f+tail.l*.85f,reflections.r*.65f+tail.r*.85f};
+        // More diffuse late energy, rather than a louder upfront slap.
+        float l=reflections.l*.8f+tail.l*3.f,r=reflections.r*.8f+tail.r*3.f;
+        float mid=(l+r)*.5f,side=(l-r)*.5f*1.35f;
+        return {(mid+side)*.8f,(mid-side)*.8f};
     }
 };
 
